@@ -10,8 +10,17 @@ class BowlingTest {
 
         assertEquals(0, total)
     }
+
+    @Test
+    fun `knocks down 1 pin in each frame`() {
+        val total: Int = bowlingScore("1- 1- 1- 1- 1- 1- 1- 1- 1- 1-")
+
+        assertEquals(10, total)
+    }
 }
 
 private fun bowlingScore(input: String): Int {
-    return 0
+    val frames = input.split(" ")
+        .map { frame -> if (frame.startsWith("-")) 0 else 1 }
+    return frames.sum()
 }
