@@ -29,9 +29,11 @@ class BowlingTest {
 private fun bowlingScore(input: String): Int {
     val frames = input.split(" ")
         .map { frame ->
-            val throw1 = if (frame.substring(0, 1) == "-") 0 else 1
-            val throw2 = if (frame.substring(1, 2) == "-") 0 else 1
+            val throw1 = frame.substring(0, 1).parseThrow()
+            val throw2 = frame.substring(1, 2).parseThrow()
             throw1 + throw2
         }
     return frames.sum()
 }
+
+private fun String.parseThrow() = if (this == "-") 0 else 1
