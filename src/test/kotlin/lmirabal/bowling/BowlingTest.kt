@@ -24,6 +24,13 @@ class BowlingTest {
 
         assertEquals(20, total)
     }
+
+    @Test
+    fun `knocks down an extra pin with each throw`() {
+        val total: Int = bowlingScore("-- 1- 2- 3- 4- 5- 6- 7- 8- 9-")
+
+        assertEquals(45, total)
+    }
 }
 
 private fun bowlingScore(input: String): Int {
@@ -36,4 +43,4 @@ private fun bowlingScore(input: String): Int {
     return frames.sum()
 }
 
-private fun String.parseThrow() = if (this == "-") 0 else 1
+private fun String.parseThrow() = this.toIntOrNull() ?: 0
