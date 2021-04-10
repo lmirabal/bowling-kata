@@ -31,16 +31,32 @@ class BowlingTest {
 
         assertEquals(45, total)
     }
+
+    @Test
+    fun `spares in first frame and knocks down 5 in the others`() {
+        val total: Int = bowlingScore("-/ 5- 5- 5- 5- 5- 5- 5- 5- 5-")
+
+        assertEquals(60, total)
+    }
 }
 
 private fun bowlingScore(input: String): Int {
-    val frames = input.split(" ")
-        .map { frame ->
+    val throws = input.split(" ")
+        .flatMap { frame ->
             val throw1 = frame.substring(0, 1).parseThrow()
             val throw2 = frame.substring(1, 2).parseThrow()
-            throw1 + throw2
+            listOf(throw1, throw2)
         }
-    return frames.sum()
+    var total = 0
+    for (i in throws.indices) {
+        val current = throws[i]
+        total += if (current != 10) current else current + throws[i + 1]
+    }
+    return total
 }
 
-private fun String.parseThrow() = this.toIntOrNull() ?: 0
+private fun String.parseThrow() = when (this) {
+    "/" -> 10
+    "-" -> 0
+    else -> toInt()
+}
