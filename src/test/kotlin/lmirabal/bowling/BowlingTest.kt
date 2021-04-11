@@ -52,47 +52,60 @@ class BowlingTest {
 
         assertEquals(152, total)
     }
+
+    @Test
+    fun `strikes all except last frame`() {
+        val total: Int = bowlingScore("X X X X X X X X X --")
+
+        assertEquals(240, total)
+    }
 }
 
 private fun bowlingScore(input: String): Int {
     return input.split(" ")
         .map { frame ->
-            val throw1 = frame.substring(0, 1).parse9PinThrow()
-            val nextThrows = frame.drop(1).map { it.toString().parseNextThrow(throw1) }
+            val throw1 = frame.substring(0, 1).parseNonSpareThrow()
+            val nextThrows = frame.drop(1).map { it.toString().parseSpareableThrow(throw1) }
             Frame.from(listOf(throw1) + nextThrows)
         }
-        .windowed(size = 2, step = 1, partialWindows = true) { window ->
-            val nextFrame = window.last()
-            window.first().score(nextFrame.firstThrow)
+        .windowed(size = 3, step = 1, partialWindows = true) { window ->
+            val nextThrows = window.drop(1).flatMap { it.throws }
+            window.first().score(nextThrows)
         }
         .sum()
 }
 
-private fun String.parse9PinThrow() = when (this) {
+private fun String.parseNonSpareThrow() = when (this) {
     "-" -> 0
+    "X" -> 10
     else -> toInt()
 }
 
-private fun String.parseNextThrow(throw1: Int) = when (this) {
+private fun String.parseSpareableThrow(throw1: Int) = when (this) {
     "/" -> 10 - throw1
-    else -> parse9PinThrow()
+    else -> parseNonSpareThrow()
 }
 
 sealed class Frame(val throws: List<Int>) {
-    val firstThrow = throws.first()
-    abstract fun score(next: Int): Int
+    abstract fun score(next: List<Int>): Int
 
     private class Pins(throws: List<Int>) : Frame(throws) {
-        override fun score(next: Int) = throws.sum()
+        override fun score(next: List<Int>) = throws.sum()
     }
 
     private class Spare(throws: List<Int>) : Frame(throws) {
-        override fun score(next: Int) = throws.sum() + next
+        override fun score(next: List<Int>) = (throws + next.take(1)).sum()
+    }
+
+    private class Strike(throws: List<Int>) : Frame(throws) {
+        override fun score(next: List<Int>) = (throws + next.take(2)).sum()
     }
 
     companion object {
-        fun from(throws: List<Int>): Frame =
-            if (throws.sum() == 10) Spare(throws)
-            else Pins(throws)
+        fun from(throws: List<Int>): Frame = when {
+            throws.size == 1 -> Strike(throws)
+            throws.sum() == 10 -> Spare(throws)
+            else -> Pins(throws)
+        }
     }
 }
