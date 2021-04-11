@@ -45,20 +45,25 @@ class BowlingTest {
 
         assertEquals(130, total)
     }
+
+    @Test
+    fun `knocks down 5 pins and spares in each frame with a final 7`() {
+        val total = bowlingScore("5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/ 5/7")
+
+        assertEquals(152, total)
+    }
 }
 
 private fun bowlingScore(input: String): Int {
     return input.split(" ")
         .map { frame ->
             val throw1 = frame.substring(0, 1).parse9PinThrow()
-            val throw2 = frame.substring(1, 2).parseSecondThrow(throw1)
-            Frame(throw1, throw2)
+            val nextThrows = frame.drop(1).map { it.toString().parseNextThrow(throw1) }
+            Frame.from(listOf(throw1) + nextThrows)
         }
         .windowed(size = 2, step = 1, partialWindows = true) { window ->
-            val currentFrameScore = window.first().score()
             val nextFrame = window.last()
-            if (currentFrameScore < 10) currentFrameScore
-            else currentFrameScore + nextFrame.throw1
+            window.first().score(nextFrame.firstThrow)
         }
         .sum()
 }
@@ -68,11 +73,26 @@ private fun String.parse9PinThrow() = when (this) {
     else -> toInt()
 }
 
-private fun String.parseSecondThrow(throw1: Int) = when (this) {
+private fun String.parseNextThrow(throw1: Int) = when (this) {
     "/" -> 10 - throw1
     else -> parse9PinThrow()
 }
 
-data class Frame(val throw1: Int, val throw2: Int) {
-    fun score() = throw1 + throw2
+sealed class Frame(val throws: List<Int>) {
+    val firstThrow = throws.first()
+    abstract fun score(next: Int): Int
+
+    private class Pins(throws: List<Int>) : Frame(throws) {
+        override fun score(next: Int) = throws.sum()
+    }
+
+    private class Spare(throws: List<Int>) : Frame(throws) {
+        override fun score(next: Int) = throws.sum() + next
+    }
+
+    companion object {
+        fun from(throws: List<Int>): Frame =
+            if (throws.sum() == 10) Spare(throws)
+            else Pins(throws)
+    }
 }
