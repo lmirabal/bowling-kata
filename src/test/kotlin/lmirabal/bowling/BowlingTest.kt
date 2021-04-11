@@ -48,18 +48,19 @@ class BowlingTest {
 }
 
 private fun bowlingScore(input: String): Int {
-    val frames = input.split(" ")
+    return input.split(" ")
         .map { frame ->
             val throw1 = frame.substring(0, 1).parse9PinThrow()
             val throw2 = frame.substring(1, 2).parseSecondThrow(throw1)
             Frame(throw1, throw2)
         }
-    var total = 0
-    for (i in frames.indices) {
-        val current = frames[i].score()
-        total += if (current < 10) current else current + frames[i + 1].throw1
-    }
-    return total
+        .windowed(size = 2, step = 1, partialWindows = true) { window ->
+            val currentFrameScore = window.first().score()
+            val nextFrame = window.last()
+            if (currentFrameScore < 10) currentFrameScore
+            else currentFrameScore + nextFrame.throw1
+        }
+        .sum()
 }
 
 private fun String.parse9PinThrow() = when (this) {
