@@ -59,13 +59,38 @@ class BowlingTest {
 
         assertEquals(240, total)
     }
+
+    @Test
+    fun `perfect game`() {
+        val total: Int = bowlingScore("X X X X X X X X X XXX")
+
+        assertEquals(300, total)
+    }
+
+    @Test
+    fun `perfect game but 1 pin on last throw`() {
+        val total: Int = bowlingScore("X X X X X X X X X XX1")
+
+        assertEquals(291, total)
+    }
+
+    @Test
+    fun `spares on the third throw in the last frame`() {
+        val total: Int = bowlingScore("X X X X X X X X X X1/")
+
+        assertEquals(281, total)
+    }
 }
 
 private fun bowlingScore(input: String): Int {
     return input.split(" ")
         .map { frame ->
             val throw1 = frame.substring(0, 1).parseNonSpareThrow()
-            val nextThrows = frame.drop(1).map { it.toString().parseSpareableThrow(throw1) }
+            val nextThrows = frame
+                .map { it.toString() }
+                .zipWithNext { previous, current ->
+                    current.parseSpareableThrow(previous)
+                }
             Frame.from(listOf(throw1) + nextThrows)
         }
         .windowed(size = 3, step = 1, partialWindows = true) { window ->
@@ -81,8 +106,8 @@ private fun String.parseNonSpareThrow() = when (this) {
     else -> toInt()
 }
 
-private fun String.parseSpareableThrow(throw1: Int) = when (this) {
-    "/" -> 10 - throw1
+private fun String.parseSpareableThrow(previousThrow: String) = when (this) {
+    "/" -> 10 - previousThrow.parseNonSpareThrow()
     else -> parseNonSpareThrow()
 }
 
